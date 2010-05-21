@@ -7,8 +7,8 @@ module Kestrel
         super(client)
       end
 
-      %w(set get delete flush stat).each do |method|
-        class_eval "def #{method}(key, *args); client.#{method}(namespace(key), *args) end", __FILE__, __LINE__
+      def method_missing(method, key, *args)
+        client.send(method, namespace(key), *args)
       end
 
       def available_queues
@@ -16,13 +16,21 @@ module Kestrel
       end
 
       def in_namespace(key)
-        if match = @matcher.match(key)
+        if @namespace.nil? || @namespace.empty?
+          return key
+        elsif match = @matcher.match(key)
           match[1]
         end
       end
 
+      private
+
       def namespace(key)
-        "#{@namespace}:#{key}"
+        if @namespace.nil? || @namespace.empty?
+          key
+        else
+          "#{@namespace}:#{key}"
+        end
       end
     end
   end
